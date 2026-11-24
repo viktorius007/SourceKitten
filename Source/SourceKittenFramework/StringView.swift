@@ -73,7 +73,11 @@ public struct StringView {
         var utf16CountSoFar = 0
         var bytesSoFar: ByteCount = 0
         var lines = [Line]()
-        let lineContents = string.components(separatedBy: newlinesCharacterSet)
+        // Splitting the unicode scalars natively gives the same components as
+        // `components(separatedBy: newlinesCharacterSet)` without a character set lookup per UTF-16 unit.
+        let lineContents = string.unicodeScalars
+            .split(omittingEmptySubsequences: false) { $0 == "\u{000A}" || $0 == "\u{000D}" }
+            .map(String.init)
         // Be compatible with `NSString.getLineStart(_:end:contentsEnd:forRange:)`
         let endsWithNewLineCharacter: Bool
         if let lastChar = utf16View.last,
